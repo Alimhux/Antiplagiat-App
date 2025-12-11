@@ -1,0 +1,98 @@
+services:
+  postgres-files:
+    image: postgres:15-alpine
+    container_name: postgres-files
+    environment:
+      POSTGRES_DB: files_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres_files_data:/var/lib/postgresql/data
+      - ./init-scripts/files-db.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5434:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d files_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  postgres-analysis:
+    image: postgres:15-alpine
+    container_name: postgres-analysis
+    environment:
+      POSTGRES_DB: analysis_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres_analysis_data:/var/lib/postgresql/data
+      - ./init-scripts/analysis-db.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5435:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d analysis_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  file-storing-service:
+    build:
+      context: .
+      dockerfile: file-storing-service/Dockerfile
+    container_name: file-storing-service
+    environment:
+      DB_HOST: postgres-files
+      DB_PORT: 5432
+      DB_NAME: files_db
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      SERVICE_PORT: 8081
+    ports:
+      - "8081:8081"
+    volumes:
+      - uploads_data:/app/uploads
+    depends_on:
+      postgres-files:
+        condition: service_healthy
+
+  file-analysis-service:
+    build:
+      context: .
+      dockerfile: file-analysis-service/Dockerfile
+    container_name: file-analysis-service
+    environment:
+      DB_HOST: postgres-analysis
+      DB_PORT: 5432
+      DB_NAME: analysis_db
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      SERVICE_PORT: 8082
+      FILE_SERVICE_URL: http://file-storing-service:8081
+    ports:
+      - "8082:8082"
+    volumes:
+      - reports_data:/app/reports
+    depends_on:
+      postgres-analysis:
+        condition: service_healthy
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: api-gateway/Dockerfile
+    container_name: api-gateway
+    environment:
+      SERVICE_PORT: 8080
+      FILE_SERVICE_URL: http://file-storing-service:8081
+      ANALYSIS_SERVICE_URL: http://file-analysis-service:8082
+    ports:
+      - "8080:8080"
+    depends_on:
+      - file-storing-service
+      - file-analysis-service
+
+volumes:
+  postgres_files_data:
+  postgres_analysis_data:
+  uploads_data:
+  reports_data:

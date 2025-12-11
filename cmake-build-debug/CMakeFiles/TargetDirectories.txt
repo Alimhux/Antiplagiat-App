@@ -1,0 +1,11 @@
+/Users/slavyan/Documents/C++/anitplagiat_app/cmake-build-debug/CMakeFiles/edit_cache.dir
+/Users/slavyan/Documents/C++/anitplagiat_app/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/Users/slavyan/Documents/C++/anitplagiat_app/cmake-build-debug/api-gateway/CMakeFiles/api-gateway.dir
+/Users/slavyan/Documents/C++/anitplagiat_app/cmake-build-debug/api-gateway/CMakeFiles/edit_cache.dir
+/Users/slavyan/Documents/C++/anitplagiat_app/cmake-build-debug/api-gateway/CMakeFiles/rebuild_cache.dir
+/Users/slavyan/Documents/C++/anitplagiat_app/cmake-build-debug/file-storing-service/CMakeFiles/file-storing-service.dir
+/Users/slavyan/Documents/C++/anitplagiat_app/cmake-build-debug/file-storing-service/CMakeFiles/edit_cache.dir
+/Users/slavyan/Documents/C++/anitplagiat_app/cmake-build-debug/file-storing-service/CMakeFiles/rebuild_cache.dir
+/Users/slavyan/Documents/C++/anitplagiat_app/cmake-build-debug/file-analysis-service/CMakeFiles/file-analysis-service.dir
+/Users/slavyan/Documents/C++/anitplagiat_app/cmake-build-debug/file-analysis-service/CMakeFiles/edit_cache.dir
+/Users/slavyan/Documents/C++/anitplagiat_app/cmake-build-debug/file-analysis-service/CMakeFiles/rebuild_cache.dir
