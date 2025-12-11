@@ -1,0 +1,4 @@
+# ninja log v6
+1	99	1765482627597191006	build.ninja	dd93f533d29d988b
+3960	4903	1765464976171075478	api-gateway/api-gateway	2324de2c5534ae34
+0	3958	1765464972211775877	api-gateway/CMakeFiles/api-gateway.dir/src/main.cpp.o	6aab0f4d3265cf9f

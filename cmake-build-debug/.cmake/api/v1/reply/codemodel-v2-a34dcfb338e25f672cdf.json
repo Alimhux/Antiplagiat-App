@@ -1,0 +1,159 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"childIndexes" : 
+					[
+						1,
+						2,
+						3
+					],
+					"jsonFile" : "directory-.-Debug-f5ebdc15457944623624.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.20"
+					},
+					"projectIndex" : 0,
+					"source" : "."
+				},
+				{
+					"build" : "api-gateway",
+					"jsonFile" : "directory-api-gateway-Debug-79c82b87f7caf1887972.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.20"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 1,
+					"source" : "api-gateway",
+					"targetIndexes" : 
+					[
+						0
+					]
+				},
+				{
+					"build" : "file-storing-service",
+					"jsonFile" : "directory-file-storing-service-Debug-fadee25d2a79fcd026dd.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.20"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 2,
+					"source" : "file-storing-service",
+					"targetIndexes" : 
+					[
+						2
+					]
+				},
+				{
+					"build" : "file-analysis-service",
+					"jsonFile" : "directory-file-analysis-service-Debug-41a2747e6228e663f14d.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.20"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 3,
+					"source" : "file-analysis-service",
+					"targetIndexes" : 
+					[
+						1
+					]
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"childIndexes" : 
+					[
+						1,
+						2,
+						3
+					],
+					"directoryIndexes" : 
+					[
+						0
+					],
+					"name" : "antiplagiat_app"
+				},
+				{
+					"directoryIndexes" : 
+					[
+						1
+					],
+					"name" : "api-gateway",
+					"parentIndex" : 0,
+					"targetIndexes" : 
+					[
+						0
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						2
+					],
+					"name" : "file-storing-service",
+					"parentIndex" : 0,
+					"targetIndexes" : 
+					[
+						2
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						3
+					],
+					"name" : "file-analysis-service",
+					"parentIndex" : 0,
+					"targetIndexes" : 
+					[
+						1
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 1,
+					"id" : "api-gateway::@35f7b3107de7758346b5",
+					"jsonFile" : "target-api-gateway-Debug-8001439c12e4e60707db.json",
+					"name" : "api-gateway",
+					"projectIndex" : 1
+				},
+				{
+					"directoryIndex" : 3,
+					"id" : "file-analysis-service::@1b16b96236be816e89d5",
+					"jsonFile" : "target-file-analysis-service-Debug-8c35ed12aa48670941bc.json",
+					"name" : "file-analysis-service",
+					"projectIndex" : 3
+				},
+				{
+					"directoryIndex" : 2,
+					"id" : "file-storing-service::@0798a1eae4f43ff0b4d0",
+					"jsonFile" : "target-file-storing-service-Debug-9e88fded414a5eedb77e.json",
+					"name" : "file-storing-service",
+					"projectIndex" : 2
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "/Users/slavyan/Documents/C++/anitplagiat_app/cmake-build-debug",
+		"source" : "/Users/slavyan/Documents/C++/anitplagiat_app"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 7
+	}
+}
