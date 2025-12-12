@@ -1,15 +1,17 @@
 #include "analysishandlers.h"
-
-
 #include "json.hpp"
 #include <iostream>
+#include <sstream>
+#include <iomanip>
 
 using json = nlohmann::json;
 
 namespace handlers {
 
-AnalysisHandlers::AnalysisHandlers(service::AnalysisService& analysisService)
+AnalysisHandlers::AnalysisHandlers(service::AnalysisService& analysisService,
+                                   clients::FileServiceClient& fileClient)
     : analysisService_(analysisService)
+    , fileClient_(fileClient)
 {}
 
 void AnalysisHandlers::registerRoutes(httplib::Server& server) {
@@ -27,6 +29,11 @@ void AnalysisHandlers::registerRoutes(httplib::Server& server) {
 
     server.Get(R"(/tasks/([^/]+)/reports)", [this](const httplib::Request& req, httplib::Response& res) {
         handleGetTaskReports(req, res);
+    });
+
+    // Word Cloud endpoint
+    server.Get(R"(/submissions/(\d+)/wordcloud)", [this](const httplib::Request& req, httplib::Response& res) {
+        handleGetWordCloud(req, res);
     });
 }
 
@@ -54,17 +61,14 @@ void AnalysisHandlers::handleAnalyze(const httplib::Request& req, httplib::Respo
             return;
         }
 
-        // Формируем запрос
         service::AnalyzeRequest analyzeReq;
         analyzeReq.submissionId = body["submission_id"];
         analyzeReq.taskId = body["task_id"];
         analyzeReq.studentName = body["student_name"];
         analyzeReq.fileHash = body["file_hash"];
 
-        // Выполняем анализ
         auto result = analysisService_.analyze(analyzeReq);
 
-        // Формируем ответ
         json response;
         response["report_id"] = result.reportId;
         response["submission_id"] = result.submissionId;
@@ -121,6 +125,9 @@ void AnalysisHandlers::handleGetReport(const httplib::Request& req, httplib::Res
             response["completed_at"] = nullptr;
         }
 
+        // Добавляем ссылку на Word Cloud
+        response["word_cloud_url"] = "/submissions/" + std::to_string(submissionId) + "/wordcloud";
+
         sendJson(res, 200, response.dump());
 
     } catch (const std::exception& e) {
@@ -150,6 +157,7 @@ void AnalysisHandlers::handleGetTaskReports(const httplib::Request& req, httplib
             report["similarity_percent"] = r.similarityPercent;
             report["status"] = r.status;
             report["created_at"] = r.createdAt;
+            report["word_cloud_url"] = "/submissions/" + std::to_string(r.submissionId) + "/wordcloud";
             reportsJson.push_back(report);
         }
 
@@ -163,6 +171,53 @@ void AnalysisHandlers::handleGetTaskReports(const httplib::Request& req, httplib
 
     } catch (const std::exception& e) {
         std::cerr << "[AnalysisHandlers] Error in handleGetTaskReports: " << e.what() << std::endl;
+        sendError(res, 500, std::string("Server error: ") + e.what());
+    }
+}
+
+void AnalysisHandlers::handleGetWordCloud(const httplib::Request& req, httplib::Response& res) {
+    try {
+        int submissionId = std::stoi(req.matches[1]);
+        std::cout << "[AnalysisHandlers] GET /submissions/" << submissionId << "/wordcloud" << std::endl;
+
+        // Получаем содержимое файла через FileServiceClient
+        std::string content = fileClient_.getFileContent(submissionId);
+
+        if (content.empty()) {
+            sendError(res, 404, "File content not found");
+            return;
+        }
+
+        // URL-encode содержимого для QuickChart API
+        std::ostringstream escaped;
+        escaped.fill('0');
+        escaped << std::hex;
+
+        for (char c : content) {
+            if (isalnum(static_cast<unsigned char>(c)) || c == '-' || c == '_' || c == '.' || c == '~' || c == ' ') {
+                if (c == ' ') {
+                    escaped << '+';
+                } else {
+                    escaped << c;
+                }
+            } else {
+                escaped << '%' << std::setw(2) << static_cast<int>(static_cast<unsigned char>(c));
+            }
+        }
+
+        // Формируем URL для QuickChart Word Cloud API
+        std::string wordCloudUrl = "https://quickchart.io/wordcloud?text=" + escaped.str() +
+                                   "&width=800&height=600&fontScale=15&rotation=0";
+
+        json response;
+        response["submission_id"] = submissionId;
+        response["word_cloud_url"] = wordCloudUrl;
+        response["message"] = "Open the URL in browser to view the word cloud";
+
+        sendJson(res, 200, response.dump());
+
+    } catch (const std::exception& e) {
+        std::cerr << "[AnalysisHandlers] Error in handleGetWordCloud: " << e.what() << std::endl;
         sendError(res, 500, std::string("Server error: ") + e.what());
     }
 }

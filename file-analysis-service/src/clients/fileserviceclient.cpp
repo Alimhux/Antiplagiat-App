@@ -7,9 +7,7 @@ using json = nlohmann::json;
 
 namespace clients {
 
-FileServiceClient::FileServiceClient(const std::string& baseUrl)
-    : baseUrl_(baseUrl)
-{
+FileServiceClient::FileServiceClient(const std::string& baseUrl) {
     auto [h, p] = parseUrl(baseUrl);
     host_ = h;
     port_ = p;
@@ -54,6 +52,27 @@ std::vector<FileInfo> FileServiceClient::findByHash(const std::string& hash) {
     return result;
 }
 
+std::string FileServiceClient::getFileContent(int submissionId) {
+    httplib::Client client(host_, port_);
+    client.set_connection_timeout(5);
+    client.set_read_timeout(10);
+
+    std::string path = "/files/" + std::to_string(submissionId) + "/content";
+    auto response = client.Get(path.c_str());
+
+    if (!response) {
+        std::cerr << "[FileServiceClient] Failed to get file content" << std::endl;
+        return "";
+    }
+
+    if (response->status != 200) {
+        std::cerr << "[FileServiceClient] Error getting content: " << response->status << std::endl;
+        return "";
+    }
+
+    return response->body;
+}
+
 std::pair<std::string, int> FileServiceClient::parseUrl(const std::string& url) {
     std::string host = "localhost";
     int port = 80;
@@ -74,4 +93,4 @@ std::pair<std::string, int> FileServiceClient::parseUrl(const std::string& url) 
     return {host, port};
 }
 
-} // namespace clients
+}

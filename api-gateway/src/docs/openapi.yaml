@@ -1,0 +1,398 @@
+openapi: 3.0.3
+info:
+  title: Antiplagiat API
+  description: |
+    Система проверки студенческих работ на плагиат.
+    
+    ## Архитектура
+    Система состоит из трёх микросервисов:
+    - **API Gateway** (порт 8080) — единая точка входа, маршрутизация запросов
+    - **File Storing Service** (порт 8081) — хранение файлов и метаданных
+    - **File Analysis Service** (порт 8082) — анализ на плагиат, генерация отчётов
+    
+    ## Алгоритм определения плагиата
+    Система вычисляет SHA-256 хэш содержимого файла. Если существует более ранняя 
+    сдача от другого студента с идентичным хэшем — фиксируется плагиат (100% совпадение).
+    
+    ## Сценарий использования
+    1. Студент загружает работу через `POST /api/submissions`
+    2. Система сохраняет файл и автоматически запускает анализ
+    3. Преподаватель получает отчёты через `GET /api/tasks/{task_id}/reports`
+  version: 1.0.0
+  contact:
+    name: Student
+    
+servers:
+  - url: http://localhost:8080
+    description: API Gateway (локальный)
+
+tags:
+  - name: submissions
+    description: Работа с загруженными работами
+  - name: reports
+    description: Отчёты о плагиате
+  - name: health
+    description: Проверка состояния сервисов
+
+paths:
+  /health:
+    get:
+      tags: [health]
+      summary: Проверка здоровья API Gateway
+      responses:
+        '200':
+          description: Сервис работает
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              example:
+                status: ok
+                service: api-gateway
+
+  /api/submissions:
+    post:
+      tags: [submissions]
+      summary: Загрузить работу на проверку
+      description: |
+        Загружает файл, сохраняет в системе и автоматически запускает проверку на плагиат.
+        Возвращает информацию о загрузке и результат анализа.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmissionRequest'
+            examples:
+              cpp_file:
+                summary: C++ файл
+                value:
+                  student_name: "Иванов Иван"
+                  task_id: "homework-3"
+                  filename: "solution.cpp"
+                  content: "#include <iostream>\n\nint main() {\n    std::cout << \"Hello!\" << std::endl;\n    return 0;\n}"
+              python_file:
+                summary: Python файл
+                value:
+                  student_name: "Петров Пётр"
+                  task_id: "homework-3"
+                  filename: "solution.py"
+                  content: "def main():\n    print('Hello!')\n\nif __name__ == '__main__':\n    main()"
+      responses:
+        '201':
+          description: Работа успешно загружена и проанализирована
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmissionResponse'
+        '207':
+          description: Работа загружена, но анализ не удался
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartialResponse'
+        '400':
+          description: Ошибка валидации
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/submissions/{id}:
+    get:
+      tags: [submissions]
+      summary: Получить информацию о работе
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID загруженной работы
+      responses:
+        '200':
+          description: Информация о работе
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Submission'
+        '404':
+          description: Работа не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/submissions/{id}/report:
+    get:
+      tags: [reports]
+      summary: Получить отчёт о плагиате
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID работы
+      responses:
+        '200':
+          description: Отчёт о проверке на плагиат
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Report'
+        '404':
+          description: Отчёт не найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/submissions/{id}/wordcloud:
+    get:
+      tags: [reports]
+      summary: Получить облако слов (Word Cloud)
+      description: Возвращает URL для визуализации работы в виде облака слов
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID работы
+      responses:
+        '200':
+          description: URL облака слов
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WordCloud'
+        '404':
+          description: Работа не найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/tasks/{task_id}/reports:
+    get:
+      tags: [reports]
+      summary: Получить все отчёты по заданию
+      description: Возвращает сводку по всем работам для конкретного задания
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Идентификатор задания
+          example: homework-3
+      responses:
+        '200':
+          description: Сводка по заданию
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskReports'
+
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: ok
+        service:
+          type: string
+          example: api-gateway
+
+    SubmissionRequest:
+      type: object
+      required:
+        - student_name
+        - task_id
+        - filename
+        - content
+      properties:
+        student_name:
+          type: string
+          description: ФИО студента
+          example: "Иванов Иван"
+        task_id:
+          type: string
+          description: Идентификатор задания
+          example: "homework-3"
+        filename:
+          type: string
+          description: Имя файла
+          example: "solution.cpp"
+        content:
+          type: string
+          description: Содержимое файла
+          example: "int main() { return 0; }"
+
+    Submission:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        student_name:
+          type: string
+          example: "Иванов Иван"
+        task_id:
+          type: string
+          example: "homework-3"
+        filename:
+          type: string
+          example: "solution.cpp"
+        file_hash:
+          type: string
+          description: SHA-256 хэш содержимого
+          example: "a1b2c3d4..."
+        file_size:
+          type: integer
+          example: 128
+        uploaded_at:
+          type: string
+          format: date-time
+
+    Report:
+      type: object
+      properties:
+        report_id:
+          type: integer
+          example: 1
+        submission_id:
+          type: integer
+          example: 2
+        task_id:
+          type: string
+          example: "homework-3"
+        student_name:
+          type: string
+          example: "Петров Пётр"
+        is_plagiarism:
+          type: boolean
+          description: Флаг обнаружения плагиата
+          example: true
+        similarity_percent:
+          type: number
+          format: float
+          description: Процент совпадения
+          example: 100.0
+        original_submission_id:
+          type: integer
+          nullable: true
+          description: ID оригинальной работы (если плагиат)
+          example: 1
+        status:
+          type: string
+          example: "completed"
+        word_cloud_url:
+          type: string
+          description: URL для получения облака слов
+          example: "/api/submissions/2/wordcloud"
+        created_at:
+          type: string
+          format: date-time
+
+    SubmissionResponse:
+      type: object
+      properties:
+        submission:
+          $ref: '#/components/schemas/Submission'
+        analysis:
+          $ref: '#/components/schemas/AnalysisResult'
+        word_cloud_url:
+          type: string
+          example: "/api/submissions/1/wordcloud"
+
+    AnalysisResult:
+      type: object
+      properties:
+        report_id:
+          type: integer
+        submission_id:
+          type: integer
+        is_plagiarism:
+          type: boolean
+        similarity_percent:
+          type: number
+        original_submission_id:
+          type: integer
+          nullable: true
+        status:
+          type: string
+
+    PartialResponse:
+      type: object
+      properties:
+        submission:
+          $ref: '#/components/schemas/Submission'
+        analysis:
+          nullable: true
+        warning:
+          type: string
+          example: "File uploaded but analysis service unavailable"
+
+    TaskReports:
+      type: object
+      properties:
+        task_id:
+          type: string
+          example: "homework-3"
+        total_submissions:
+          type: integer
+          description: Общее количество работ
+          example: 5
+        plagiarism_count:
+          type: integer
+          description: Количество работ с плагиатом
+          example: 2
+        reports:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReportSummary'
+
+    ReportSummary:
+      type: object
+      properties:
+        report_id:
+          type: integer
+        submission_id:
+          type: integer
+        student_name:
+          type: string
+        is_plagiarism:
+          type: boolean
+        similarity_percent:
+          type: number
+        status:
+          type: string
+        word_cloud_url:
+          type: string
+        created_at:
+          type: string
+
+    WordCloud:
+      type: object
+      properties:
+        submission_id:
+          type: integer
+          example: 1
+        word_cloud_url:
+          type: string
+          description: URL для просмотра облака слов (откройте в браузере)
+          example: "https://quickchart.io/wordcloud?text=..."
+        message:
+          type: string
+          example: "Open the URL in browser to view the word cloud"
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "Not found"

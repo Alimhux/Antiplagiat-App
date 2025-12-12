@@ -17,11 +17,14 @@ private:
   // Health & Info
   void handleHealth(const httplib::Request& req, httplib::Response& res);
   void handleRoot(const httplib::Request& req, httplib::Response& res);
+  void handleDocs(const httplib::Request& req, httplib::Response& res);
+  void handleOpenApiSpec(const httplib::Request& req, httplib::Response& res);
 
   // Submissions
   void handleCreateSubmission(const httplib::Request& req, httplib::Response& res);
   void handleGetSubmission(const httplib::Request& req, httplib::Response& res);
   void handleGetSubmissionReport(const httplib::Request& req, httplib::Response& res);
+  void handleGetWordCloud(const httplib::Request& req, httplib::Response& res);
 
   // Tasks
   void handleGetTaskReports(const httplib::Request& req, httplib::Response& res);
@@ -35,7 +38,5 @@ private:
 };
 
 }
-
-
 
 #endif //GATEWAYHANDLERS_H

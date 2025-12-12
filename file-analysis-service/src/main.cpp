@@ -22,7 +22,7 @@ int main() {
     repository::ReportRepository reportRepo(database);
     clients::FileServiceClient fileClient(cfg.server().fileServiceUrl);
     service::AnalysisService analysisService(reportRepo, fileClient);
-    handlers::AnalysisHandlers analysisHandlers(analysisService);
+    handlers::AnalysisHandlers analysisHandlers(analysisService, fileClient);
 
     // 4. Настраиваем HTTP сервер
     httplib::Server server;
